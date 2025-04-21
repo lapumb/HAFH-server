@@ -2,8 +2,11 @@
 package main
 
 import (
+	"hafh-server/internal/http"
 	"hafh-server/internal/logger"
 	"os"
+	"os/signal"
+	"syscall"
 )
 
 func getEnvBool(key string, fallback bool) bool {
@@ -25,7 +28,16 @@ func main() {
 
 	log.Info("Starting hafh-server...")
 
-	// Initialize the server
+	// Initialize the servers.
+	go http.StartServer("8080", "dummy", 5)
 
-	log.Info(("Stopping hafh-server..."))
+	// Wait for interrupt signal to gracefully shut down the server
+	quit := make(chan os.Signal, 1)
+
+	// Accept SIGINT (Ctrl+C) or SIGTERM (e.g., systemd stop)
+	log.Info("Waiting for interrupt signal...")
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	log.Info("Exiting...")
 }
