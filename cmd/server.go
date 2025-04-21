@@ -7,20 +7,23 @@ import (
 )
 
 func getEnvBool(key string, fallback bool) bool {
-    val := os.Getenv(key)
-    if val == "" {
-        return fallback
-    }
-    return val == "1" || val == "true" || val == "yes"
+	val := os.Getenv(key)
+	if val == "" {
+		return fallback
+	}
+	return val == "1" || val == "true" || val == "yes"
 }
 
 func main() {
 	debug := getEnvBool("DEBUG", false)
 
-    logger.Init(debug)
-    log := logger.Named("main")
+	logger.Init(debug)
+	log := logger.Named("main")
 
-    log.Info("Starting hafh-server...")
+	// Note: this will only print to stdout if debug is enabled.
+	log.Debug("Debug mode is enabled")
+
+	log.Info("Starting hafh-server...")
 
 	// Initialize the server
 
