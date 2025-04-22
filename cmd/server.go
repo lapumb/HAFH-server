@@ -2,11 +2,13 @@
 package main
 
 import (
+	"context"
 	"hafh-server/internal/http"
 	"hafh-server/internal/logger"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func getEnvBool(key string, fallback bool) bool {
@@ -29,7 +31,17 @@ func main() {
 	log.Info("Starting hafh-server...")
 
 	// Initialize the servers.
-	go http.StartServer("8080", "dummy", 5)
+	httpServer, err := http.New("8080", "dummy", 5)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Start the HTTP server in a separate goroutine.
+	go func() {
+		if err := httpServer.Start(); err != nil {
+			log.Fatalf("HTTP server failed: %v", err)
+		}
+	}()
 
 	// Wait for interrupt signal to gracefully shut down the server
 	quit := make(chan os.Signal, 1)
@@ -38,6 +50,14 @@ func main() {
 	log.Info("Waiting for interrupt signal...")
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	log.Info("Shutting down server...")
+	if err := httpServer.Shutdown(ctx); err != nil {
+		log.Fatalf("Server shutdown error: %v", err)
+	}
 
 	log.Info("Exiting...")
 }

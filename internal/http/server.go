@@ -1,40 +1,77 @@
 package http
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
+	"errors"
 	"hafh-server/internal/http/handlers"
 	"hafh-server/internal/http/middleware"
+	"hafh-server/internal/logger"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
-// Start the HTTP server where an API key is required for all requests.
+type HttpServer struct {
+	internalServer *http.Server
+	log            *zap.SugaredLogger
+}
+
+// Create a new [HttpServer] instance with the specified port, API key, and max requests per second (rate limit).
 //
-// The server will listen on the specified port and limit the number of requests
-// to the specified maximum requests per second.
+// Notes:
 //
-// If the server fails to start, it will panic with an error message.
-func StartServer(port string, apiKey string, maxRequestsPerSecond int) {
+// - The server will listen on the specified port, defaulting to 8080 if not provided.
+//
+// - The API key is required for authentication.
+//
+// - The max requests per second is used to limit the rate of incoming requests, defaulting to 5 if not provided.
+func New(port string, apiKey string, maxRequestsPerSecond int) (*HttpServer, error) {
 	if port == "" {
 		port = "8080"
 	} else if maxRequestsPerSecond <= 0 {
 		maxRequestsPerSecond = 5
 	} else if apiKey == "" {
-		panic("API key is required")
+		return nil, errors.New("API key is required")
 	}
 
 	gin.SetMode(gin.ReleaseMode)
 
 	server := gin.New()
-	server.Use(middleware.HttpLogger(), gin.Recovery())
 
-	// Middleware to check for a valid API key and rate limit requests.
-	server.Use(middleware.APIKeyAuth(apiKey), middleware.RateLimit(maxRequestsPerSecond))
+	log := logger.Named("http")
+	server.Use(
+		middleware.HttpLogger(log),
+		middleware.APIKeyAuth(apiKey),
+		middleware.RateLimit(maxRequestsPerSecond),
+		gin.Recovery(),
+	)
 
 	// Route definitions:
 	server.GET("/api/version", handlers.VersionHandler)
 
-	// Run the server.
-	err := server.Run(":" + port)
-	if err != nil {
-		panic("Failed to start server: " + err.Error())
+	s := &http.Server{
+		Addr:    ":" + port,
+		Handler: server,
 	}
+
+	return &HttpServer{
+		internalServer: s,
+		log:            log,
+	}, nil
+}
+
+// Start the HTTP server and listen for incoming requests. **This should be called in a separate goroutine.**
+func (s *HttpServer) Start() error {
+	s.log.Debugf("HTTP server listening on %s", s.internalServer.Addr)
+	if err := s.internalServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		return errors.New("failed to start server: " + err.Error())
+	}
+
+	return nil
+}
+
+// Shutdown gracefully shuts down the HTTP server, waiting for any ongoing requests to finish.
+func (s *HttpServer) Shutdown(ctx context.Context) error {
+	return s.internalServer.Shutdown(ctx)
 }

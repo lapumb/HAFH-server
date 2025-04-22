@@ -20,12 +20,12 @@ build:
 ## Run the app normally (no DEBUG)
 run:
 	@echo "🚀 Running $(APP_NAME)..."
-	$(GO) run $(ENTRY)
+	$(GO) run $(ENTRY) || true
 
 ## Run the app with DEBUG=true
 dev:
 	@echo "🧪 Running in DEBUG mode..."
-	DEBUG=true $(GO) run $(ENTRY)
+	DEBUG=true $(GO) run $(ENTRY) || true
 
 ## Format Go code
 fmt:
