@@ -73,5 +73,6 @@ func (s *HttpServer) Start() error {
 
 // Shutdown gracefully shuts down the HTTP server, waiting for any ongoing requests to finish.
 func (s *HttpServer) Shutdown(ctx context.Context) error {
+	s.log.Debug("Shutting down HTTP server...")
 	return s.internalServer.Shutdown(ctx)
 }
