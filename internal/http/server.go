@@ -12,12 +12,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// HttpServer represents an HTTP server.
 type HttpServer struct {
 	internalServer *http.Server
 	log            *zap.SugaredLogger
 }
 
-// Create a new [HttpServer] instance with the specified port, API key, and max requests per second (rate limit).
+// New creates a new [HttpServer] instance with the specified port, API key, and max requests per second (rate limit).
 //
 // Notes:
 //
@@ -61,7 +62,7 @@ func New(port string, apiKey string, maxRequestsPerSecond int) (*HttpServer, err
 	}, nil
 }
 
-// Start the HTTP server and listen for incoming requests. **This should be called in a separate goroutine.**
+// Start starts the HTTP server and listens for incoming requests. **This should be called in a separate goroutine.**
 func (s *HttpServer) Start() error {
 	s.log.Debugf("HTTP server listening on %s", s.internalServer.Addr)
 	if err := s.internalServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
@@ -71,7 +72,7 @@ func (s *HttpServer) Start() error {
 	return nil
 }
 
-// Shutdown gracefully shuts down the HTTP server, waiting for any ongoing requests to finish.
+// Shutdown gracefully shuts down the HTTP server, allowing for any ongoing requests to complete.
 func (s *HttpServer) Shutdown(ctx context.Context) error {
 	s.log.Debug("Shutting down HTTP server...")
 	return s.internalServer.Shutdown(ctx)

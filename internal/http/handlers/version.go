@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// Handles the /api/version endpoint.
+// VersionHandler is middleware that handles the /version endpoint.
 func VersionHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"version": "1.0.0",

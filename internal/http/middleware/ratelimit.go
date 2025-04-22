@@ -6,7 +6,8 @@ import (
 	"time"
 )
 
-// Middleware to limit the number of requests to 5 per second.
+// RateLimit is a middleware function that limits the number of requests
+// a client can make to the server within a specified time frame.
 func RateLimit(maxRequestsPerSecond int) gin.HandlerFunc {
 	limiter := make(chan time.Time, maxRequestsPerSecond)
 

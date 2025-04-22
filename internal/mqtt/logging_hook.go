@@ -6,15 +6,19 @@ import (
 	"go.uber.org/zap"
 )
 
+// LoggingHook is a hook that logs MQTT events such as client connections,
+// disconnections, and published messages.
 type LoggingHook struct {
 	server.HookBase
 	log *zap.SugaredLogger
 }
 
+// ID returns the ID of the hook.
 func (h *LoggingHook) ID() string {
 	return "logging-hook"
 }
 
+// Provides returns true if the hook provides the specified byte.
 func (h *LoggingHook) Provides(b byte) bool {
 	switch b {
 	case server.OnConnect, server.OnDisconnect, server.OnPublish:
@@ -24,6 +28,7 @@ func (h *LoggingHook) Provides(b byte) bool {
 	}
 }
 
+// Init initializes the hook with the provided configuration.
 func (h *LoggingHook) Init(config any) error {
 	if _, ok := config.(*zap.SugaredLogger); !ok && config != nil {
 		return server.ErrInvalidConfigType
@@ -37,15 +42,18 @@ func (h *LoggingHook) Init(config any) error {
 	return nil
 }
 
+// OnConnect logs the client connection event.
 func (h *LoggingHook) OnConnect(cl *server.Client, pk packets.Packet) error {
 	h.log.Debugf("Client connected: %s", cl.ID)
 	return nil
 }
 
+// OnDisconnect logs the client disconnection event.
 func (h *LoggingHook) OnDisconnect(cl *server.Client, err error, expire bool) {
 	h.log.Debugf("Client disconnected: %s, error: %v, expired: %v", cl.ID, err, expire)
 }
 
+// OnPublish logs the published message event.
 func (h *LoggingHook) OnPublish(cl *server.Client, pk packets.Packet) (packets.Packet, error) {
 	h.log.Debugf("Client %s sent payload to topic %s: %s", cl.ID, pk.TopicName, string(pk.Payload))
 

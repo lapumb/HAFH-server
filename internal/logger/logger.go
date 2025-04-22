@@ -1,4 +1,3 @@
-// The logger package provides a simple logging utility using zap.
 package logger
 
 import (
@@ -37,7 +36,7 @@ func Init(debug bool) {
 	baseLogger = zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1))
 }
 
-// Creates a new logger with the specified module name.
+// Named creates a new logger with the specified module name.
 func Named(module string) *zap.SugaredLogger {
 	return baseLogger.Named(module).Sugar()
 }

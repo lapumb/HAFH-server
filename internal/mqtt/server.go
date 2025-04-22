@@ -14,11 +14,15 @@ import (
 	"go.uber.org/zap"
 )
 
+// MqttServer represents an MQTT server.
 type MqttServer struct {
 	server *server.Server
 	log    *zap.SugaredLogger
 }
 
+// NewServer creates a new MQTT server instance.
+//
+// Note: if onDataReceived is nil, the server will not process incoming MQTT messages.
 func NewServer(onDataReceived PublishReceiverFn, onDataReceivedArg any) (*MqttServer, error) {
 	log := logger.Named("mqtt")
 	s := server.New(nil)
@@ -84,6 +88,7 @@ func loadTLSConfig(certPath, keyPath, caPath string) (*tls.Config, error) {
 	}, nil
 }
 
+// Start starts the MQTT server (TLS) and listens for incoming connections on the specified port.
 func (s *MqttServer) Start(certPath, keyPath, caPath string, mqttPort int) error {
 	tlsConfig, err := loadTLSConfig(certPath, keyPath, caPath)
 	if err != nil {
@@ -104,6 +109,7 @@ func (s *MqttServer) Start(certPath, keyPath, caPath string, mqttPort int) error
 	return s.server.Serve()
 }
 
+// Shutdown gracefully shuts down the MQTT server.
 func (s *MqttServer) Shutdown() error {
 	s.log.Debug("Shutting down MQTT server...")
 	return s.server.Close()

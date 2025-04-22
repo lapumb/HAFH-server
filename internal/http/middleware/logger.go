@@ -10,7 +10,7 @@ import (
 
 var log *zap.SugaredLogger
 
-// A middleware function that logs HTTP requests.
+// HttpLogger is a middleware function that logs HTTP requests and responses.
 func HttpLogger(l *zap.SugaredLogger) gin.HandlerFunc {
 	if l == nil {
 		log = logger.Named("http")

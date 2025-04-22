@@ -1,4 +1,3 @@
-// The main entry point for the server application.
 package main
 
 // TODO: make HTTP server configurable (port, API key, rate limit)

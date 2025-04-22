@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// Middleware to check for a valid API key in the request header.
+// APIKeyAuth is a middleware function that checks for a valid API key in the request header.
 func APIKeyAuth(apiKey string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.GetHeader("X-API-Key") != apiKey {
