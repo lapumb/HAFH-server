@@ -11,13 +11,13 @@ import (
 // A request body is expected with the following schema:
 //
 //	{
-//	   "serialNumber": string,
-//	   "numReadings": uint32
+//	   "serial_number": string,
+//	   "num_readings": uint32
 //	}
 func PostReadingsHandler(c *gin.Context) {
 	var request struct {
-		SerialNumber string `json:"serialNumber" binding:"required"`
-		NumReadings  uint32 `json:"numReadings" binding:"required"`
+		SerialNumber string `json:"serial_number" binding:"required"`
+		NumReadings  uint32 `json:"num_readings" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {

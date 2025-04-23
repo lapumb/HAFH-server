@@ -9,7 +9,7 @@ import (
 )
 
 // PublishReceiverFn is a function type that processes incoming MQTT messages.
-type PublishReceiverFn func(cl *server.Client, pk packets.Packet, arg any) (packets.Packet, error)
+type PublishReceiverFn func(topic, payload string, arg any) error
 
 // PublishReceiverConfig holds the configuration for the PublishReceiverHook.
 type PublishReceiverConfig struct {
@@ -52,5 +52,14 @@ func (h *PublishReceiverHook) Init(config any) error {
 
 // OnPublish processes incoming MQTT messages and calls the configured function.
 func (h *PublishReceiverHook) OnPublish(cl *server.Client, pk packets.Packet) (packets.Packet, error) {
-	return h.config.fn(cl, pk, h.config.fnArg)
+	if h.config.fn == nil {
+		return pk, nil
+	}
+
+	if err := h.config.fn(pk.TopicName, string(pk.Payload), h.config.fnArg); err != nil {
+		h.config.log.Errorf("Failed to process MQTT message: %v", err)
+		return pk, err
+	}
+
+	return pk, nil
 }

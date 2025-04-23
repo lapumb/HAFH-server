@@ -60,12 +60,74 @@ type Peripheral struct {
 	CreatedAt    time.Time      `json:"created_at"`
 }
 
+// ToJson serializes the Peripheral to JSON.
+func (p *Peripheral) ToJson() ([]byte, error) {
+	return json.Marshal(p)
+}
+
+// PeripheralFromJson is a factory-like function that deserializes JSON data into a Peripheral.
+func PeripheralFromJson(data []byte) (*Peripheral, error) {
+	var p Peripheral
+	if err := json.Unmarshal(data, &p); err != nil {
+		return nil, err
+	}
+
+	if p.SerialNumber == "" {
+		return nil, errors.New("JSON key 'serial_number' is required")
+	} else if p.Type == PeripheralTypeUnknown {
+		return nil, errors.New("JSON key 'type' is required and must be valid")
+	}
+
+	return &p, nil
+}
+
+// String returns the string representation of the Peripheral.
+func (p *Peripheral) String() string {
+	json, err := p.ToJson()
+	if err != nil {
+		return "{}"
+	}
+
+	return string(json)
+}
+
 // Reading represents a reading from a peripheral.
 type Reading struct {
 	ID           int            `json:"id"`
 	SerialNumber string         `json:"serial_number"`
 	Timestamp    time.Time      `json:"timestamp"`
 	Data         map[string]any `json:"data"`
+}
+
+// ToJson serializes the Reading to JSON.
+func (r *Reading) ToJson() ([]byte, error) {
+	return json.Marshal(r)
+}
+
+// ReadingFromJson is a factory-like function that deserializes JSON data into a Reading.
+func ReadingFromJson(data []byte) (*Reading, error) {
+	var r Reading
+	if err := json.Unmarshal(data, &r); err != nil {
+		return nil, err
+	}
+
+	if r.SerialNumber == "" {
+		return nil, errors.New("JSON key 'serial_number' is required")
+	} else if len(r.Data) == 0 {
+		return nil, errors.New("JSON key 'data' is required")
+	}
+
+	return &r, nil
+}
+
+// String returns the string representation of the Reading.
+func (r *Reading) String() string {
+	json, err := r.ToJson()
+	if err != nil {
+		return "{}"
+	}
+
+	return string(json)
 }
 
 // New initializes a new Database instance with the given SQLite database path.
@@ -162,9 +224,14 @@ func (d *Database) InsertReading(r *Reading) error {
 }
 
 // GetLastReadings retrieves the last `limit` readings for a given peripheral.
+// GetLastReadings retrieves the last `limit` readings for a given peripheral.
 func (d *Database) GetLastReadings(serial string, limit uint32) ([]Reading, error) {
 	rows, err := d.db.Query(
-		`SELECT id, timestamp, data FROM readings WHERE serial_number = ? ORDER BY timestamp DESC LIMIT ?`,
+		`SELECT id, serial_number, timestamp, data 
+		 FROM readings 
+		 WHERE serial_number = ? 
+		 ORDER BY timestamp DESC 
+		 LIMIT ?`,
 		serial, limit,
 	)
 	if err != nil {
@@ -177,16 +244,14 @@ func (d *Database) GetLastReadings(serial string, limit uint32) ([]Reading, erro
 	for rows.Next() {
 		var r Reading
 		var rawData string
-		if err := rows.Scan(&r.ID, &r.Timestamp, &rawData); err != nil {
+		if err := rows.Scan(&r.ID, &r.SerialNumber, &r.Timestamp, &rawData); err != nil {
 			return nil, err
 		}
 
-		var data map[string]any
-		if err := json.Unmarshal([]byte(rawData), &data); err != nil {
+		if err := json.Unmarshal([]byte(rawData), &r.Data); err != nil {
 			return nil, err
 		}
 
-		r.Data = data
 		results = append(results, r)
 	}
 

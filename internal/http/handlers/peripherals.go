@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"hafh-server/internal/database"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -24,14 +25,16 @@ func GetPeripheralsHandler(c *gin.Context) {
 //
 // A request body is expected with the following schema:
 //
-//	{
-//	   "serialNumber": string,
-//	   "name": string
-//	}
+//		{
+//		   "serial_number": string,
+//		   "name": string,
+//	       "type": PeripheralType
+//		}
 func PostConfigurePeripheralHandler(c *gin.Context) {
 	var request struct {
-		SerialNumber string `json:"serialNumber" binding:"required"`
+		SerialNumber string `json:"serial_number" binding:"required"`
 		Name         string `json:"name" binding:"required"`
+		Type         uint8  `json:"type" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -68,6 +71,7 @@ func PostConfigurePeripheralHandler(c *gin.Context) {
 
 	// Set the name of the peripheral in the database.
 	peripheral.Name = request.Name
+	peripheral.Type = database.PeripheralType(request.Type)
 	err = config.db.UpdatePeripheral(peripheral)
 	if err != nil {
 		config.log.Error("Failed to set peripheral name: ", err)
