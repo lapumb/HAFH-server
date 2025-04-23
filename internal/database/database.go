@@ -205,9 +205,18 @@ func (d *Database) GetAllPeripherals() ([]Peripheral, error) {
 	var peripherals []Peripheral
 	for rows.Next() {
 		var p Peripheral
-		if err := rows.Scan(&p.SerialNumber, &p.Type, &p.Name, &p.CreatedAt); err != nil {
+		var name sql.NullString
+		if err := rows.Scan(&p.SerialNumber, &p.Type, &name, &p.CreatedAt); err != nil {
 			return nil, err
 		}
+
+		// The 'name' is optional, and may be null.
+		if name.Valid {
+			p.Name = name.String
+		} else {
+			p.Name = ""
+		}
+
 		peripherals = append(peripherals, p)
 	}
 

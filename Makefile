@@ -8,7 +8,7 @@ CERT_DIR := certs
 GO := go
 GOFMT := go fmt
 
-.PHONY: all build run dev fmt clean certs certs-clean
+.PHONY: all build run dev lint format clean certs certs-clean
 
 # Default target
 all: build
@@ -28,8 +28,12 @@ dev:
 	@echo "🧪 Running in DEBUG mode..."
 	DEBUG=true $(GO) run $(ENTRY) || true
 
+lint:
+	go vet ./...
+	staticcheck ./...
+
 ## Format Go code
-fmt:
+format:
 	@echo "🧼 Formatting code..."
 	$(GOFMT) ./...
 

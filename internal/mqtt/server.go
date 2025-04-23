@@ -20,10 +20,10 @@ type MqttServer struct {
 	log    *zap.SugaredLogger
 }
 
-// NewServer creates a new MQTT server instance.
+// New creates a new MQTT server instance.
 //
 // Note: if onDataReceived is nil, the server will not process incoming MQTT messages.
-func NewServer(onDataReceived PublishReceiverFn, onDataReceivedArg any) (*MqttServer, error) {
+func New(onDataReceived PublishReceiverFn, onDataReceivedArg any) (*MqttServer, error) {
 	log := logger.Named("mqtt")
 	s := server.New(nil)
 	if s == nil {

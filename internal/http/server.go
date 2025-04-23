@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"hafh-server/internal/database"
 	"hafh-server/internal/http/handlers"
 	"hafh-server/internal/http/middleware"
 	"hafh-server/internal/logger"
@@ -16,7 +17,23 @@ import (
 type HttpServer struct {
 	internalServer *http.Server
 	log            *zap.SugaredLogger
+	Db             *database.Database
 }
+
+// HttpServerConfig holds the configuration for the HTTP server.
+type HttpServerConfig struct {
+	Port                 string
+	ApiKey               string
+	MaxRequestsPerSecond int
+	Db                   *database.Database
+}
+
+const (
+	apiPrefix           = "/api/" + handlers.ApiVersionMajor
+	versionEndpoint     = apiPrefix + "/version"
+	readingsEndpoint    = apiPrefix + "/readings"
+	peripheralsEndpoint = apiPrefix + "/peripherals"
+)
 
 // New creates a new [HttpServer] instance with the specified port, API key, and max requests per second (rate limit).
 //
@@ -27,13 +44,24 @@ type HttpServer struct {
 // - The API key is required for authentication.
 //
 // - The max requests per second is used to limit the rate of incoming requests, defaulting to 5 if not provided.
-func New(port string, apiKey string, maxRequestsPerSecond int) (*HttpServer, error) {
+func New(config *HttpServerConfig) (*HttpServer, error) {
+	// Validate the configuration.
+	if config == nil {
+		return nil, errors.New("config cannot be nil")
+	}
+
+	port := config.Port
+	apiKey := config.ApiKey
+	maxRequestsPerSecond := config.MaxRequestsPerSecond
+	db := config.Db
 	if port == "" {
 		port = "8080"
 	} else if maxRequestsPerSecond <= 0 {
 		maxRequestsPerSecond = 5
 	} else if apiKey == "" {
 		return nil, errors.New("API key is required")
+	} else if db == nil {
+		return nil, errors.New("database is required")
 	}
 
 	gin.SetMode(gin.ReleaseMode)
@@ -48,8 +76,13 @@ func New(port string, apiKey string, maxRequestsPerSecond int) (*HttpServer, err
 		gin.Recovery(),
 	)
 
+	handlers.Init(db, log)
+
 	// Route definitions:
-	server.GET("/api/version", handlers.VersionHandler)
+	server.GET(versionEndpoint, handlers.GetVersionHandler)
+	server.GET(peripheralsEndpoint, handlers.GetPeripheralsHandler)
+	server.POST(peripheralsEndpoint, handlers.PostConfigurePeripheralHandler)
+	server.POST(readingsEndpoint, handlers.PostReadingsHandler)
 
 	s := &http.Server{
 		Addr:    ":" + port,
@@ -59,6 +92,7 @@ func New(port string, apiKey string, maxRequestsPerSecond int) (*HttpServer, err
 	return &HttpServer{
 		internalServer: s,
 		log:            log,
+		Db:             db,
 	}, nil
 }
 
