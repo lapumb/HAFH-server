@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"hafh-server/internal/config"
 	"hafh-server/internal/database"
 	"hafh-server/internal/http"
@@ -79,10 +80,21 @@ func main() {
 	logger.Init(config.Debug)
 	log := logger.Named("main")
 
+	fmt.Print(`
+
+        ██╗  ██╗ █████╗ ███████╗██╗  ██╗       /\
+        ██║  ██║██╔══██╗██╔════╝██║  ██║      /  \
+        ███████║███████║█████╗  ███████║     /____\
+        ██╔══██║██╔══██║██╔══╝  ██╔══██║    |      |
+        ██║  ██║██║  ██║██║     ██║  ██║    |  []  |
+        ╚═╝  ╚═╝╚═╝  ╚═╝══╝     ╚═╝  ╚═╝    |______|
+
+         🌐 Welcome to your Home Away from Home 🌐
+
+    `)
+
 	// Note: this will only print to stdout if debug is enabled.
 	log.Debugf("Using config:\n%s", config.String())
-
-	log.Info("Starting hafh-server...")
 
 	// Initialize the database.
 	db, err := database.New(config.DB.Path)
