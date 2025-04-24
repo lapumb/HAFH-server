@@ -224,7 +224,6 @@ func (d *Database) InsertReading(r *Reading) error {
 }
 
 // GetLastReadings retrieves the last `limit` readings for a given peripheral.
-// GetLastReadings retrieves the last `limit` readings for a given peripheral.
 func (d *Database) GetLastReadings(serial string, limit uint32) ([]Reading, error) {
 	rows, err := d.db.Query(
 		`SELECT id, serial_number, timestamp, data 
