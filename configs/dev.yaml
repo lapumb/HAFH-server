@@ -1,0 +1,22 @@
+# This is a sample configuration file for a development environment.
+
+# Determines the log level for the application (debug=true means all logs are shown, false means only info and above)
+debug: true
+
+# HTTP configuration for the application.
+http:
+  port: 8080
+  api_key: "dummy"
+  max_requests_per_second: 5
+
+# MQTT configuration for secure communication that is accessible from anywhere on the network.
+mqtt:
+  address: "0.0.0.0"
+  port: 8883
+  cert_path: "certs/server.crt"
+  key_path: "certs/server.key"
+  ca_path: "certs/ca.crt"
+
+# Defaults to an in-memory SQLite database for development purposes.
+database:
+  path: ":memory:"

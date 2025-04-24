@@ -33,7 +33,7 @@ func (h *PublishReceiverHook) ID() string {
 // Provides returns true if the hook provides the specified byte.
 func (h *PublishReceiverHook) Provides(b byte) bool {
 	return bytes.Contains([]byte{
-		server.OnPublish,
+		server.OnPublished,
 	}, []byte{b})
 }
 
@@ -51,15 +51,13 @@ func (h *PublishReceiverHook) Init(config any) error {
 }
 
 // OnPublish processes incoming MQTT messages and calls the configured function.
-func (h *PublishReceiverHook) OnPublish(cl *server.Client, pk packets.Packet) (packets.Packet, error) {
+func (h *PublishReceiverHook) OnPublished(cl *server.Client, pk packets.Packet) {
 	if h.config.fn == nil {
-		return pk, nil
+		return
 	}
 
 	if err := h.config.fn(pk.TopicName, string(pk.Payload), h.config.fnArg); err != nil {
 		h.config.log.Errorf("Failed to process MQTT message: %v", err)
-		return pk, err
+		return
 	}
-
-	return pk, nil
 }

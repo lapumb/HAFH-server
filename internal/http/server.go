@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"fmt"
 	"hafh-server/internal/database"
 	"hafh-server/internal/http/handlers"
 	"hafh-server/internal/http/middleware"
@@ -22,7 +23,7 @@ type HttpServer struct {
 
 // HttpServerConfig holds the configuration for the HTTP server.
 type HttpServerConfig struct {
-	Port                 string
+	Port                 int
 	ApiKey               string
 	MaxRequestsPerSecond int
 	Db                   *database.Database
@@ -54,8 +55,8 @@ func New(config *HttpServerConfig) (*HttpServer, error) {
 	apiKey := config.ApiKey
 	maxRequestsPerSecond := config.MaxRequestsPerSecond
 	db := config.Db
-	if port == "" {
-		port = "8080"
+	if port == 0 {
+		port = 8080
 	} else if maxRequestsPerSecond <= 0 {
 		maxRequestsPerSecond = 5
 	} else if apiKey == "" {
@@ -85,7 +86,7 @@ func New(config *HttpServerConfig) (*HttpServer, error) {
 	server.POST(readingsEndpoint, handlers.PostReadingsHandler)
 
 	s := &http.Server{
-		Addr:    ":" + port,
+		Addr:    fmt.Sprintf(":%d", port),
 		Handler: server,
 	}
 

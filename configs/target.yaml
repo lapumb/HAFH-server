@@ -1,0 +1,18 @@
+# This is a target-hardware configuration file intended to be used in a Yocto / systemd environment.
+
+debug: false
+
+http:
+  port: 8080
+  api_key: "FILL_IN"
+  max_requests_per_second: 5
+
+mqtt:
+  address: "0.0.0.0"
+  port: 8883
+  cert_path: "/data/hafh-server/certs/server.crt"
+  key_path: "/data/hafh-server/certs/server.key"
+  ca_path: "/data/hafh-server/certs/ca.crt"
+
+database:
+  path: "/data/hafh-server/hafh.db"

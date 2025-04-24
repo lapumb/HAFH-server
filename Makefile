@@ -21,12 +21,12 @@ build:
 ## Run the app normally (no DEBUG)
 run:
 	@echo "🚀 Running $(APP_NAME)..."
-	$(GO) run $(ENTRY) || true
+	$(GO) run $(ENTRY) configs/target.yaml || true
 
 ## Run the app with DEBUG=true
 dev:
 	@echo "🧪 Running in DEBUG mode..."
-	DEBUG=true $(GO) run $(ENTRY) || true
+	$(GO) run $(ENTRY) configs/dev.yaml || true
 
 lint:
 	go vet ./...

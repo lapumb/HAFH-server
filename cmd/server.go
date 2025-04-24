@@ -1,11 +1,8 @@
 package main
 
-// TODO: make HTTP server configurable (port, API key, rate limit)
-// TODO: make cert/key/ca paths for MQTT server configurable
-// TODO: made database path configurable
-
 import (
 	"context"
+	"hafh-server/internal/config"
 	"hafh-server/internal/database"
 	"hafh-server/internal/http"
 	"hafh-server/internal/logger"
@@ -65,28 +62,30 @@ func onMqttDataReceived(topic, payload string, arg any) error {
 	return nil
 }
 
-func getEnvBool(key string, fallback bool) bool {
-	val := os.Getenv(key)
-	if val == "" {
-		return fallback
+func getConfigPath() string {
+	if len(os.Args) < 2 {
+		return ""
 	}
 
-	return val == "1" || val == "true" || val == "yes"
+	return os.Args[1]
 }
 
 func main() {
-	debug := getEnvBool("DEBUG", false)
+	config, err := config.Load(getConfigPath())
+	if err != nil && config == nil {
+		panic(err)
+	}
 
-	logger.Init(debug)
+	logger.Init(config.Debug)
 	log := logger.Named("main")
 
 	// Note: this will only print to stdout if debug is enabled.
-	log.Debug("Debug mode is enabled")
+	log.Debugf("Using config:\n%s", config.String())
 
 	log.Info("Starting hafh-server...")
 
 	// Initialize the database.
-	db, err := database.New(":memory:")
+	db, err := database.New(config.DB.Path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,9 +100,9 @@ func main() {
 
 	// Initialize the HTTP server.
 	httpServer, err := http.New(&http.HttpServerConfig{
-		Port:                 "8080",
-		ApiKey:               "dummy",
-		MaxRequestsPerSecond: 5,
+		Port:                 config.HTTP.Port,
+		ApiKey:               config.HTTP.APIKey,
+		MaxRequestsPerSecond: config.HTTP.MaxRequestsPerSecond,
 		Db:                   db,
 	})
 	if err != nil {
@@ -130,11 +129,11 @@ func main() {
 
 	// Start the MQTT server.
 	mqttServer, err := mqtt.New(&mqtt.MqttServerConfig{
-		Address:        "0.0.0.0",
-		Port:           8883,
-		CertPath:       "certs/server.crt",
-		KeyPath:        "certs/server.key",
-		CaPath:         "certs/ca.crt",
+		Address:        config.MQTT.Address,
+		Port:           config.MQTT.Port,
+		CertPath:       config.MQTT.CertPath,
+		KeyPath:        config.MQTT.KeyPath,
+		CaPath:         config.MQTT.CaPath,
 		OnDataReceived: onMqttDataReceived,
 		OnDataReceivedArg: &publishReceiverArg{
 			log: logger.Named("mqtt::data-received"),
