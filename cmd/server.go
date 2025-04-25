@@ -8,6 +8,7 @@ import (
 	"hafh-server/internal/http"
 	"hafh-server/internal/logger"
 	"hafh-server/internal/mqtt"
+	forward "hafh-server/internal/ngrok"
 	"os"
 	"os/signal"
 	"syscall"
@@ -82,16 +83,16 @@ func main() {
 
 	fmt.Print(`
 
-        ██╗  ██╗ █████╗ ███████╗██╗  ██╗       /\
-        ██║  ██║██╔══██╗██╔════╝██║  ██║      /  \
-        ███████║███████║█████╗  ███████║     /____\
-        ██╔══██║██╔══██║██╔══╝  ██╔══██║    |      |
-        ██║  ██║██║  ██║██║     ██║  ██║    |  []  |
-        ╚═╝  ╚═╝╚═╝  ╚═╝══╝     ╚═╝  ╚═╝    |______|
+██╗  ██╗ █████╗ ███████╗██╗  ██╗       /\
+██║  ██║██╔══██╗██╔════╝██║  ██║      /  \
+███████║███████║█████╗  ███████║     /____\
+██╔══██║██╔══██║██╔══╝  ██╔══██║    |      |
+██║  ██║██║  ██║██║     ██║  ██║    |  []  |
+╚═╝  ╚═╝╚═╝  ╚═╝══╝     ╚═╝  ╚═╝    |______|
 
-         🌐 Welcome to your Home Away from Home 🌐
+ 🌐 Welcome to your Home Away from Home 🌐
 
-    `)
+`)
 
 	// Note: this will only print to stdout if debug is enabled.
 	log.Debugf("Using config:\n%s", config.String())
@@ -137,6 +138,23 @@ func main() {
 		}
 
 		log.Info("HTTP server shutdown successfully!")
+	}()
+
+	// Initialize the ngrok forwarder.
+	forwarder, err := forward.New(&forward.ForwarderConfig{
+		BackendUrl: fmt.Sprintf("localhost:%d", config.HTTP.Port),
+		DomainUrl:  config.Ngrok.Domain,
+		AuthToken:  config.Ngrok.AuthToken,
+		Region:     config.Ngrok.Region,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	go func() {
+		if err := forwarder.Start(context.Background()); err != nil {
+			log.Fatalf("Ngrok forwarder failed: %v", err)
+		}
 	}()
 
 	// Start the MQTT server.

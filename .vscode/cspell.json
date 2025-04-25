@@ -15,5 +15,7 @@
         "staticcheck", 
         "acreateserial", 
         "golangci",
+        "ngrok",
+        "authtoken",
     ],
 }

@@ -4,8 +4,15 @@ debug: false
 
 http:
   port: 8080
-  api_key: "FILL_IN"
+  api_key: "@@HAFH_SERVER_API_KEY@@"
   max_requests_per_second: 5
+
+# Ngrok configuration for tunneling HTTP traffic to a public URL.
+ngrok:
+  enabled: false
+  auth_token: "@@HAFH_SERVER_NGROK_AUTH_TOKEN@@"
+  region: "us"
+  domain: "@@HAFH_SERVER_NGROK_SUBDOMAIN@@"
 
 mqtt:
   address: "0.0.0.0"

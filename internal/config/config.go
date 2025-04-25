@@ -8,16 +8,24 @@ import (
 )
 
 type Config struct {
-	Debug bool       `yaml:"debug" default:"false"`
-	HTTP  HTTPConfig `yaml:"http"`
-	MQTT  MQTTConfig `yaml:"mqtt"`
-	DB    DBConfig   `yaml:"database"`
+	Debug bool        `yaml:"debug" default:"false"`
+	HTTP  HTTPConfig  `yaml:"http"`
+	Ngrok NgrokConfig `yaml:"ngrok"`
+	MQTT  MQTTConfig  `yaml:"mqtt"`
+	DB    DBConfig    `yaml:"database"`
 }
 
 type HTTPConfig struct {
 	Port                 int    `yaml:"port" default:"8080"`
 	APIKey               string `yaml:"api_key" default:""`
 	MaxRequestsPerSecond int    `yaml:"max_requests_per_second" default:"5"`
+}
+
+type NgrokConfig struct {
+	Enabled   bool   `yaml:"enabled" default:"false"`
+	AuthToken string `yaml:"auth_token" default:""`
+	Domain    string `yaml:"domain" default:""`
+	Region    string `yaml:"region" default:"us"`
 }
 
 type MQTTConfig struct {
