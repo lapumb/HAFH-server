@@ -9,7 +9,7 @@ http:
 
 # Ngrok configuration for tunneling HTTP traffic to a public URL.
 ngrok:
-  enabled: false
+  enabled: true
   auth_token: "@@HAFH_SERVER_NGROK_AUTH_TOKEN@@"
   region: "us"
   domain: "@@HAFH_SERVER_NGROK_SUBDOMAIN@@"

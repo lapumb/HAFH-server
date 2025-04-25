@@ -141,21 +141,23 @@ func main() {
 	}()
 
 	// Initialize the ngrok forwarder.
-	forwarder, err := forward.New(&forward.ForwarderConfig{
-		BackendUrl: fmt.Sprintf("localhost:%d", config.HTTP.Port),
-		DomainUrl:  config.Ngrok.Domain,
-		AuthToken:  config.Ngrok.AuthToken,
-		Region:     config.Ngrok.Region,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	go func() {
-		if err := forwarder.Start(context.Background()); err != nil {
-			log.Fatalf("Ngrok forwarder failed: %v", err)
+	if config.Ngrok.Enabled {
+		forwarder, err := forward.New(&forward.ForwarderConfig{
+			BackendUrl: fmt.Sprintf("localhost:%d", config.HTTP.Port),
+			DomainUrl:  config.Ngrok.Domain,
+			AuthToken:  config.Ngrok.AuthToken,
+			Region:     config.Ngrok.Region,
+		})
+		if err != nil {
+			log.Fatal(err)
 		}
-	}()
+
+		go func() {
+			if err := forwarder.Start(context.Background()); err != nil {
+				log.Fatalf("Ngrok forwarder failed: %v", err)
+			}
+		}()
+	}
 
 	// Start the MQTT server.
 	mqttServer, err := mqtt.New(&mqtt.MqttServerConfig{

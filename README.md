@@ -73,19 +73,29 @@ curl -X GET \
 
 ### HTTPS with `ngrok`
 
-As mentioned above, this application exposes a standard HTTP server. _However_, for the HTTP server to have any use, we need to expose it to the outside world. This can be done using `ngrok`, which creates a secure tunnel to your localhost. To do this, create an account (or sign in) and follow the [getting started guide](https://dashboard.ngrok.com/get-started). Once you have `ngrok` installed, you can run the following command to expose your HTTP server:
+As mentioned above, this application exposes a standard HTTP server. _However_, for the HTTP server to have any use, we need to expose it to the outside world. This can be done using `ngrok`, which creates a secure (HTTPS) tunnel to your localhost. To do this, create an account (or sign in) and follow the [getting started guide](https://dashboard.ngrok.com/get-started) before following one of the two options below.
+
+>**Note**: it is HIGHLY recommended to create a static domain for your `ngrok` tunnel. One static domain is free, but you can create more for a small fee. This will allow you to use the same domain every time you start the tunnel.
+
+#### Internal / Embedded (Recommended)
+
+The application can optionally be built with `ngrok` embedded. This is done by configuring the `ngrok` settings in the configuration file. The application will then automatically start an `ngrok` tunnel when it starts up. This is the recommended way to run the application, as it simplifies the setup process and ensures that the tunnel is always running.
+
+>**Note**: This option requires a static domain be set in the configuration file.
+
+#### External
+
+Once you have `ngrok` installed, you can run the following command to expose your HTTP server:
 
 ```sh
 ngrok http 8080
 ```
 
->**Note**: it is HIGHLY recommended to create a static domain for your `ngrok` tunnel. One static domain is free, but you can create more for a small fee. This will allow you to use the same domain every time you start the tunnel, which is useful for testing and development purposes.
->
->To start the `ngrok` tunnel with your static domain, run:
->
->```sh
->ngrok http --url=<your-domain> http://localhost:8080
->```
+Or, to start the `ngrok` tunnel with your static domain, run:
+
+```sh
+ngrok http --url=<your-domain> http://localhost:8080
+```
 
 ## MQTT
 
