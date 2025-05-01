@@ -4,10 +4,6 @@ ENTRY := cmd/server.go
 BIN_DIR := bin
 CERT_DIR := certs
 
-# Go commands
-GO := go
-GOFMT := go fmt
-
 .PHONY: all build run dev lint format clean certs certs-clean
 
 # Default target
@@ -16,17 +12,17 @@ all: build
 ## Build the binary
 build:
 	@echo "🔨 Building $(APP_NAME)..."
-	$(GO) build -o $(BIN_DIR)/$(APP_NAME) $(ENTRY)
+	go build -o $(BIN_DIR)/$(APP_NAME) $(ENTRY)
 
 ## Run the app normally (no DEBUG)
 run:
 	@echo "🚀 Running $(APP_NAME)..."
-	$(GO) run $(ENTRY) configs/target.yaml || true
+	go run $(ENTRY) configs/target.yaml || true
 
 ## Run the app with DEBUG=true
 dev:
 	@echo "🧪 Running in DEBUG mode..."
-	$(GO) run $(ENTRY) configs/dev.yaml || true
+	go run $(ENTRY) configs/dev.yaml || true
 
 lint:
 	go vet ./...
@@ -35,12 +31,12 @@ lint:
 ## Format Go code
 format:
 	@echo "🧼 Formatting code..."
-	$(GOFMT) ./...
+	go fmt ./...
 
 ## Clean the bin directory and Go cache
 clean:
 	@echo "🧹 Cleaning up..."
-	$(GO) clean
+	go clean
 	rm -rf $(BIN_DIR)/
 
 ## Clean certs

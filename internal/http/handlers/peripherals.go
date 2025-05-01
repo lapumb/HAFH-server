@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetPeripheralsHandler returns the list of peripherals from the database.
-func GetPeripheralsHandler(c *gin.Context) {
+// GetPeripherals returns the list of peripherals from the database.
+func GetPeripherals(c *gin.Context) {
 	// Get the peripherals from the database.
 	peripherals, err := config.db.GetAllPeripherals()
 	if err != nil {
@@ -21,18 +21,18 @@ func GetPeripheralsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"peripherals": peripherals})
 }
 
-// PostConfigurePeripheralHandler sets the name of a peripheral in the database.
+// PostConfigurePeripheral sets the name and type of a peripheral in the database.
 //
 // A request body is expected with the following schema:
 //
-//		{
-//		   "serial_number": string,
-//		   "name": string,
-//	       "type": PeripheralType
-//		}
-func PostConfigurePeripheralHandler(c *gin.Context) {
+//	{
+//	   "serialNumber": string,
+//	   "name": string,
+//	   "type": PeripheralType
+//	}
+func PostConfigurePeripheral(c *gin.Context) {
 	var request struct {
-		SerialNumber string `json:"serial_number" binding:"required"`
+		SerialNumber string `json:"serialNumber" binding:"required"`
 		Name         string `json:"name" binding:"required"`
 		Type         uint8  `json:"type" binding:"required"`
 	}

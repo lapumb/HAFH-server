@@ -30,8 +30,8 @@ type Forwarder struct {
 	log        *zap.SugaredLogger
 }
 
-// New creates a new Forwarder instance.
-func New(config *ForwarderConfig) (*Forwarder, error) {
+// NewForwarder creates a new Forwarder instance.
+func NewForwarder(config *ForwarderConfig) (*Forwarder, error) {
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
 	} else if config.BackendUrl == "" {

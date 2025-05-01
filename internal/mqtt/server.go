@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"hafh-server/internal/database"
 	"hafh-server/internal/logger"
 	"log/slog"
 	"os"
@@ -24,19 +25,25 @@ type MqttServer struct {
 
 // MqttServerConfig holds the configuration for the MQTT server.
 type MqttServerConfig struct {
-	Address           string
-	Port              int
-	CertPath          string
-	KeyPath           string
-	CaPath            string
-	OnDataReceived    PublishReceiverFn
-	OnDataReceivedArg any
+	Address         string
+	Port            int
+	CertPath        string
+	KeyPath         string
+	CaPath          string
+	Db              *database.Database
+	DataTopicPrefix string
 }
 
-// New creates a new MQTT server instance.
+type publishReceiverArg struct {
+	log             *zap.SugaredLogger
+	db              *database.Database
+	dataTopicPrefix string
+}
+
+// NewBroker creates a new MQTT broker (server) instance.
 //
-// Note: if onDataReceived is nil, the server will not process incoming MQTT messages.
-func New(config *MqttServerConfig) (*MqttServer, error) {
+// Note: if onDataReceived is nil, the broker will not directly process incoming MQTT messages.
+func NewBroker(config *MqttServerConfig) (*MqttServer, error) {
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
 	} else if config.CertPath == "" || config.KeyPath == "" || config.CaPath == "" {
@@ -69,16 +76,18 @@ func New(config *MqttServerConfig) (*MqttServer, error) {
 	}
 
 	// Hook for processing incoming MQTT messages, if applicable.
-	if config.OnDataReceived != nil {
+	if config.DataTopicPrefix != "" && config.Db != nil {
 		err = s.AddHook(new(PublishReceiverHook), PublishReceiverConfig{
 			log:   log,
-			fn:    config.OnDataReceived,
-			fnArg: config.OnDataReceivedArg,
+			fn:    onMqttDataReceived,
+			fnArg: &publishReceiverArg{log: log, db: config.Db, dataTopicPrefix: config.DataTopicPrefix},
 		})
 
 		if err != nil {
 			return nil, errors.New("failed to add publish receiver hook: " + err.Error())
 		}
+	} else {
+		log.Debug("Skipping publish receiver hook as no data topic prefix or database is provided")
 	}
 
 	tlsConfig, err := loadTLSConfig(config.CertPath, config.KeyPath, config.CaPath)
@@ -101,6 +110,18 @@ func New(config *MqttServerConfig) (*MqttServer, error) {
 	}
 
 	return &internal, nil
+}
+
+// Start starts the MQTT server (TLS) and listens for incoming connections on the specified port.
+func (s *MqttServer) Start() error {
+	s.log.Debugf("MQTT server listening on %s:%d (TLS)", s.config.Address, s.config.Port)
+	return s.server.Serve()
+}
+
+// Shutdown gracefully shuts down the MQTT server.
+func (s *MqttServer) Shutdown() error {
+	s.log.Debug("Shutting down MQTT server...")
+	return s.server.Close()
 }
 
 func loadTLSConfig(certPath, keyPath, caPath string) (*tls.Config, error) {
@@ -127,14 +148,44 @@ func loadTLSConfig(certPath, keyPath, caPath string) (*tls.Config, error) {
 	}, nil
 }
 
-// Start starts the MQTT server (TLS) and listens for incoming connections on the specified port.
-func (s *MqttServer) Start() error {
-	s.log.Debugf("MQTT server listening on %s:%d (TLS)", s.config.Address, s.config.Port)
-	return s.server.Serve()
-}
+func onMqttDataReceived(topic, payload string, arg any) error {
+	args, ok := arg.(*publishReceiverArg)
+	if !ok {
+		panic("invalid argument type")
+	}
 
-// Shutdown gracefully shuts down the MQTT server.
-func (s *MqttServer) Shutdown() error {
-	s.log.Debug("Shutting down MQTT server...")
-	return s.server.Close()
+	// We only care about data published to the specified topic prefix.
+	if topic[:len(args.dataTopicPrefix)] != args.dataTopicPrefix {
+		args.log.Debugf("Ignoring topic %s", topic)
+		return nil
+	}
+
+	// Validate the reading payload.
+	reading, err := database.ReadingFromJson([]byte(payload))
+	if err != nil {
+		return err
+	} else if reading == nil || reading.SerialNumber == "" {
+		return nil
+	}
+
+	// The reading is valid. If the peripheral does not exist, create it.
+	peripheral, err := args.db.GetPeripheralBySerial(reading.SerialNumber)
+	if err != nil {
+		return err
+	} else if peripheral == nil {
+		args.db.AddPeripheral(&database.Peripheral{
+			SerialNumber: reading.SerialNumber,
+			Type:         database.PeripheralTypeUnknown,
+		})
+
+		args.log.Infof("Added new peripheral: %s", reading.SerialNumber)
+	}
+
+	// Insert the reading into the database.
+	if err := args.db.InsertReading(reading); err != nil {
+		return err
+	}
+
+	args.log.Infof("Inserted reading: %s", reading.String())
+	return nil
 }

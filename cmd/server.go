@@ -13,56 +13,9 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
-	"go.uber.org/zap"
 )
 
-type publishReceiverArg struct {
-	log *zap.SugaredLogger
-	db  *database.Database
-}
-
-func onMqttDataReceived(topic, payload string, arg any) error {
-	args, ok := arg.(*publishReceiverArg)
-	if !ok {
-		panic("invalid argument type")
-	}
-
-	// We only care about data published to the "peripherals/readings/#" topic.
-	if topic[:len("/peripherals/readings/")] != "/peripherals/readings/" {
-		args.log.Debugf("Ignoring topic %s", topic)
-		return nil
-	}
-
-	// Validate the reading payload.
-	reading, err := database.ReadingFromJson([]byte(payload))
-	if err != nil {
-		return err
-	} else if reading == nil || reading.SerialNumber == "" {
-		return nil
-	}
-
-	// The reading is valid. If the peripheral does not exist, create it.
-	peripheral, err := args.db.GetPeripheralBySerial(reading.SerialNumber)
-	if err != nil {
-		return err
-	} else if peripheral == nil {
-		args.db.AddPeripheral(&database.Peripheral{
-			SerialNumber: reading.SerialNumber,
-			Type:         database.PeripheralTypeUnknown,
-		})
-
-		args.log.Infof("Added new peripheral: %s", reading.SerialNumber)
-	}
-
-	// Insert the reading into the database.
-	if err := args.db.InsertReading(reading); err != nil {
-		return err
-	}
-
-	args.log.Infof("Inserted reading: %s", reading.String())
-	return nil
-}
+const dataTopicPrefix string = "/peripherals/readings/"
 
 func getConfigPath() string {
 	if len(os.Args) < 2 {
@@ -112,7 +65,7 @@ func main() {
 	log.Info("Database initialized successfully!")
 
 	// Initialize the HTTP server.
-	httpServer, err := http.New(&http.HttpServerConfig{
+	httpServer, err := http.NewServer(&http.HttpServerConfig{
 		Port:                 config.HTTP.Port,
 		ApiKey:               config.HTTP.APIKey,
 		MaxRequestsPerSecond: config.HTTP.MaxRequestsPerSecond,
@@ -142,7 +95,7 @@ func main() {
 
 	// Initialize the ngrok forwarder.
 	if config.Ngrok.Enabled {
-		forwarder, err := forward.New(&forward.ForwarderConfig{
+		forwarder, err := forward.NewForwarder(&forward.ForwarderConfig{
 			BackendUrl: fmt.Sprintf("localhost:%d", config.HTTP.Port),
 			DomainUrl:  config.Ngrok.Domain,
 			AuthToken:  config.Ngrok.AuthToken,
@@ -160,35 +113,32 @@ func main() {
 	}
 
 	// Start the MQTT server.
-	mqttServer, err := mqtt.New(&mqtt.MqttServerConfig{
-		Address:        config.MQTT.Address,
-		Port:           config.MQTT.Port,
-		CertPath:       config.MQTT.CertPath,
-		KeyPath:        config.MQTT.KeyPath,
-		CaPath:         config.MQTT.CaPath,
-		OnDataReceived: onMqttDataReceived,
-		OnDataReceivedArg: &publishReceiverArg{
-			log: logger.Named("mqtt::data-received"),
-			db:  db,
-		},
+	mqttBroker, err := mqtt.NewBroker(&mqtt.MqttServerConfig{
+		Address:         config.MQTT.Address,
+		Port:            config.MQTT.Port,
+		CertPath:        config.MQTT.CertPath,
+		KeyPath:         config.MQTT.KeyPath,
+		CaPath:          config.MQTT.CaPath,
+		Db:              db,
+		DataTopicPrefix: dataTopicPrefix,
 	})
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	go func() {
-		if err := mqttServer.Start(); err != nil {
-			log.Fatalf("MQTT server failed: %v", err)
+		if err := mqttBroker.Start(); err != nil {
+			log.Fatalf("Starting MQTT broker failed: %v", err)
 		}
 	}()
 
-	// Clean up the MQTT server on exit.
+	// Clean up the MQTT broker on exit.
 	defer func() {
-		if err := mqttServer.Shutdown(); err != nil {
-			log.Fatalf("MQTT server shutdown error: %v", err)
+		if err := mqttBroker.Shutdown(); err != nil {
+			log.Fatalf("MQTT broker shutdown error: %v", err)
 		}
 
-		log.Info("MQTT server shutdown successfully!")
+		log.Info("MQTT broker shutdown successfully!")
 	}()
 
 	// Wait for interrupt signal to gracefully shut down the server.

@@ -36,7 +36,7 @@ const (
 	peripheralsEndpoint = apiPrefix + "/peripherals"
 )
 
-// New creates a new [HttpServer] instance with the specified port, API key, and max requests per second (rate limit).
+// NewServer creates a new [HttpServer] instance with the specified port, API key, and max requests per second (rate limit).
 //
 // Notes:
 //
@@ -45,7 +45,7 @@ const (
 // - The API key is required for authentication.
 //
 // - The max requests per second is used to limit the rate of incoming requests, defaulting to 5 if not provided.
-func New(config *HttpServerConfig) (*HttpServer, error) {
+func NewServer(config *HttpServerConfig) (*HttpServer, error) {
 	// Validate the configuration.
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
@@ -80,10 +80,10 @@ func New(config *HttpServerConfig) (*HttpServer, error) {
 	handlers.Init(db, log)
 
 	// Route definitions:
-	server.GET(versionEndpoint, handlers.GetVersionHandler)
-	server.GET(peripheralsEndpoint, handlers.GetPeripheralsHandler)
-	server.POST(peripheralsEndpoint, handlers.PostConfigurePeripheralHandler)
-	server.POST(readingsEndpoint, handlers.PostReadingsHandler)
+	server.GET(versionEndpoint, handlers.GetApiVersion)
+	server.GET(peripheralsEndpoint, handlers.GetPeripherals)
+	server.POST(peripheralsEndpoint, handlers.PostConfigurePeripheral)
+	server.POST(readingsEndpoint, handlers.PostReadings)
 
 	s := &http.Server{
 		Addr:    fmt.Sprintf(":%d", port),

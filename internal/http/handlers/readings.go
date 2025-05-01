@@ -6,18 +6,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// PostReadingsHandler queries and returns the list of readings from the database.
+// PostReadings queries and returns the list of readings from the database.
 //
 // A request body is expected with the following schema:
 //
 //	{
-//	   "serial_number": string,
-//	   "num_readings": uint32
+//	   "serialNumber": string,
+//	   "numReadings": uint32
 //	}
-func PostReadingsHandler(c *gin.Context) {
+func PostReadings(c *gin.Context) {
 	var request struct {
-		SerialNumber string `json:"serial_number" binding:"required"`
-		NumReadings  uint32 `json:"num_readings" binding:"required"`
+		SerialNumber string `json:"serialNumber" binding:"required"`
+		NumReadings  uint32 `json:"numReadings" binding:"required"`
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {

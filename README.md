@@ -25,7 +25,7 @@ This project is built with [Go](https://go.dev/doc/install) and has one outside 
 go install honnef.co/go/tools/cmd/staticcheck@latest
 ```
 
-The only other dependency is `make`, which is typically pre-installed on most Unix-like systems. If you don't have `make`, you can install it using your system's package manager.
+The only other dependencies are `make` and `openssl` (3.x), which are typically pre-installed on most Unix-like systems. If you don't have `make` or `openssl`, you can install it using your system's package manager.
 
 ### Configuration
 
@@ -35,9 +35,10 @@ The configuration for the application is stored in a YAML file that is parsed at
 
 This project uses `make` to manage the build, formatting, linting, and other tasks. See the [`Makefile`](./Makefile) for the available targets. The most common targets are:
 
-- `make certs`: Generate self-signed certificates for the MQTT broker.
+- `make certs`: Generate self-signed certificates for the MQTT broker (meant for `localhost` / development).
 - `make build`: Build the application.
 - `make dev`: Build and run the development application.
+- `make run`: Build and run the application (target configuration).
 - `make lint`: Run the linter on the codebase.
 - `make format`: Format the codebase.
 
@@ -52,12 +53,12 @@ The HTTP server exposes the following endpoints:
 - `GET /api/v1/version`: Returns the API version.
 - `GET /api/v1/peripherals`: Returns a list of all the previously-connected peripherals.
 - `POST /api/v1/peripherals`: Sets the name and type of a peripheral. The body of the request should be a JSON object with the following fields:
-  - `serial_number`: The serial number of the previously-connected peripheral.
+  - `serialNumber`: The serial number of the previously-connected peripheral.
   - `name`: The new name of the peripheral.
   - `type`: The integer representing the type (see `PeripheralType` in [database.go](./internal/database/database.go) for the list of types).
 - `POST /api/v1/readings`: Gets up-to the specified number of readings of the requested peripheral. The body of the request should be a JSON object with the following fields:
-  - `serial_number`: The serial number of the peripheral.
-  - `num_readings`: The maximum number of readings to return.
+  - `serialNumber`: The serial number of the peripheral.
+  - `numReadings`: The maximum number of readings to return.
 
 ### HTTP Authentication
 
@@ -105,7 +106,7 @@ This application also includes an MQTT broker that is used to receive messages f
 
 The MQTT broker will handle all messages as needed but specifically listens to `/peripherals/readings/#`. This topic is used to receive readings from peripherals, where `#` is a wildcard that matches any number of subtopics. The readings are expected to be in JSON format and should include the following fields:
 
-- `serial_number`: The serial number of the peripheral.
+- `serialNumber`: The serial number of the peripheral.
 - `data`: The JSON object containing the reading data, intended to be "dumb" (i.e., no processing is done on the data - it is the HTTP API caller's responsibility to interpret the data).
 - (Optional) `timestamp`: The timestamp of the reading in ISO 8601 format.
 
