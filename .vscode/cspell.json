@@ -1,0 +1,21 @@
+{
+    "version": "0.2",
+    "language": "en",
+    "words": [
+        "hafh", 
+        "gofmt", 
+        "gonic", 
+        "mqtt", 
+        "mochi", 
+        "debugf", 
+        "autoincrement", 
+        "mattn", 
+        "infof", 
+        "mcuadros", 
+        "staticcheck", 
+        "acreateserial", 
+        "golangci",
+        "ngrok",
+        "authtoken",
+    ],
+}
