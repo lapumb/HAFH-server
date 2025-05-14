@@ -155,7 +155,7 @@ func onMqttDataReceived(topic, payload string, arg any) error {
 	}
 
 	// We only care about data published to the specified topic prefix.
-	if topic[:len(args.dataTopicPrefix)] != args.dataTopicPrefix {
+	if len(topic) < len(args.dataTopicPrefix) || topic[:len(args.dataTopicPrefix)] != args.dataTopicPrefix {
 		args.log.Debugf("Ignoring topic %s", topic)
 		return nil
 	}
